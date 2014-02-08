@@ -4,6 +4,7 @@ VBM=VBoxManage
 
 DOCKER_PORT=4243
 SSH_HOST_PORT=2022
+TC_PORT=8080
 
 VM_DISK=./boot2docker.vmdk
 VM_DISK_SIZE=40000
@@ -60,6 +61,11 @@ init() {
         log "DOCKER_PORT=$DOCKER_PORT on localhost is used by an other process! Change the port to a free port."
         exit 1
     fi
+    
+    if `nc -z -w2 localhost $TC_PORT > /dev/null` ; then
+        log "TC_PORT=$TC_PORT on localhost is used by an other process! Change the port to a free port."
+        exit 1
+    fi
 
     if `nc -z -w2 localhost $SSH_HOST_PORT > /dev/null` ; then
         log "SSH_HOST_PORT=$SSH_HOST_PORT on localhost is used by an other process! Change the port to a free port."
@@ -111,7 +117,8 @@ init() {
     fi
     $VBM modifyvm $VM_NAME \
         --natpf1 "ssh,tcp,127.0.0.1,$SSH_HOST_PORT,,22" \
-        --natpf1 "docker,tcp,127.0.0.1,$DOCKER_PORT,,4243"
+        --natpf1 "docker,tcp,127.0.0.1,$DOCKER_PORT,,4243" \
+        --natpf1 "tc,tcp,127.0.0.1,$TC_PORT,,8080"
 
     if [ ! -e $BOOT2DOCKER_ISO ]; then
         log "boot2docker.iso not found."
